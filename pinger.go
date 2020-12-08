@@ -36,4 +36,5 @@ func main() {
 		}()
 	}
 	waitGroup.Wait()
+	f.Close()
 }
