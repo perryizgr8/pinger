@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -66,49 +67,29 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/edit/"):]
-	p, err := loadPage(title)
-	if err != nil {
-		p = &Page{Title: title}
-	}
-	fmt.Fprintf(w, "<h1>Editing %s</h1>"+
-		"<form action=\"/safe/%s\" method=\"POST\">"+
-		"<textarea name=\"body\">%s</textarea><br>"+
-		"<input type=\"submit\" value=\"Save\">"+
-		"</form>",
-		p.Title, p.Title, p.Body)
-}
-
-type Sitelist struct {
-	Sitelist string
+type SiteData struct {
+	Sitelist         string
+	OutputFileSuffix string
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	//fmt.Fprintf(w, "Hi there I am a webpage %s", r.URL.Path[1:])
-	//sitelist := "bing.com"
-	//p, err := loadPage("Pinger")
-	//if(err != nil) {
-	//    p = &Page{Title: "Pinger"}
-	//}
+	var chartSuffix time.Time
 	fmt.Printf("method=%s\n", r.Method)
 	if r.Method == "POST" {
 		r.ParseForm()
 		fmt.Printf("parsed")
-		//fmt.Fprintf(w, "r.list = %s", r.FormValue("list"))
 		os.Remove("list.txt")
 		file, _ := os.Create("list.txt")
 		file.Write([]byte(r.FormValue("list")))
 		file.Close()
-		drawChart(pingit(r.FormValue("list")))
-		//for _, stats := range statsList {
-		//	fmt.Printf(stats.Addr)
-		//}
+		chartSuffix = drawChart(pingit(r.FormValue("list")))
+	} else {
+		chartSuffix = time.Unix(0, 0)
 	}
 	file, _ := os.Open("list.txt")
 	data := make([]byte, 100)
 	count, _ := file.Read(data)
-	p := &Sitelist{Sitelist: string(data[:count])}
+	p := &SiteData{Sitelist: string(data[:count]), OutputFileSuffix: strconv.FormatInt(chartSuffix.Unix(), 10)}
 	t, _ := template.ParseFiles("mainpage.html")
 	t.Execute(w, p)
 	file.Close()
@@ -116,15 +97,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", handler)
-	http.HandleFunc("/edit/", editHandler)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 	fmt.Printf("listening...\n")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func drawChart(stats []ping.Statistics) {
+func drawChart(stats []ping.Statistics) time.Time {
+	var chartValues []chart.Value
+	for _, stat := range stats {
+		chartValues = append(chartValues, chart.Value{Value: float64(stat.AvgRtt), Label: stat.Addr})
+	}
 	graph := chart.BarChart{
-		Title: "Test Bar Chart",
+		Title: "ICMP Ping RTT",
 		Background: chart.Style{
 			Padding: chart.Box{
 				Top: 40,
@@ -132,18 +116,11 @@ func drawChart(stats []ping.Statistics) {
 		},
 		Height:   512,
 		BarWidth: 60,
-		Bars: []chart.Value{
-			{Value: 5.25, Label: "Blue"},
-			{Value: 4.88, Label: "Green"},
-			{Value: 4.74, Label: "Gray"},
-			{Value: 3.22, Label: "Orange"},
-			{Value: 3, Label: "Test"},
-			{Value: 2.27, Label: "??"},
-			{Value: 1, Label: "!!"},
-		},
+		Bars:     chartValues,
 	}
-
-	f, _ := os.Create("assets/output.png")
+	chartSuffix := time.Now()
+	f, _ := os.Create(fmt.Sprintf("assets/output%d.png", chartSuffix.Unix()))
 	defer f.Close()
 	graph.Render(chart.PNG, f)
+	return chartSuffix
 }
