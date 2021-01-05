@@ -122,7 +122,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func drawChart(stats *ping.Statistics) {
+func drawChart(stats []ping.Statistics) {
 	graph := chart.BarChart{
 		Title: "Test Bar Chart",
 		Background: chart.Style{
