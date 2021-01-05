@@ -1,0 +1,20 @@
+<html>
+<head>
+  <title>Pinger</title>
+</head>
+
+<body>
+<h1>Pinger</h1>
+
+<form action="/" method="POST">
+  <label for="list">Targets:</label>
+  <br>
+  <div><textarea name="list" rows="20" cols="20">{{printf "%s" .Sitelist}}</textarea></div>
+  <br>
+  <div><input type="submit" value="Ping it!" /></div>
+</form>
+
+<img src="assets/output.png">
+
+</body>
+</html>

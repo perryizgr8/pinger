@@ -3,15 +3,16 @@ package main
 import (
 	"bufio"
 	"fmt"
+
 	"github.com/go-ping/ping"
-	"os"
+
+	"strings"
 	"sync"
 	"time"
 )
 
-func main() {
-	f, _ := os.Open("list.txt")
-	scanner := bufio.NewScanner(f)
+func pingit(list string) {
+	scanner := bufio.NewScanner(strings.NewReader(list))
 	var waitGroup sync.WaitGroup
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -36,5 +37,4 @@ func main() {
 		}()
 	}
 	waitGroup.Wait()
-	f.Close()
 }
