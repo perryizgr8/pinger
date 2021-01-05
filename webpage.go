@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
-	"github.com/wcharczuk/go-chart"
+	"github.com/wcharczuk/go-chart/v2"
 )
 
 func pingit(list string) []ping.Statistics {
@@ -105,7 +105,7 @@ func main() {
 func drawChart(stats []ping.Statistics) time.Time {
 	var chartValues []chart.Value
 	for _, stat := range stats {
-		chartValues = append(chartValues, chart.Value{Value: float64(stat.AvgRtt), Label: stat.Addr})
+		chartValues = append(chartValues, chart.Value{Value: float64(stat.AvgRtt.Milliseconds()), Label: stat.Addr})
 	}
 	graph := chart.BarChart{
 		Title: "ICMP Ping RTT",
