@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -103,12 +104,20 @@ func main() {
 }
 
 func drawChart(stats []ping.Statistics) time.Time {
+	var max float64
 	var chartValues []chart.Value
 	for _, stat := range stats {
 		chartValues = append(chartValues, chart.Value{Value: float64(stat.AvgRtt.Milliseconds()), Label: stat.Addr})
+		max = math.Max(max, float64(stat.AvgRtt.Milliseconds()))
 	}
 	graph := chart.BarChart{
-		Title: "ICMP Ping RTT",
+		Title: "ICMP Ping RTT (milliseconds)",
+		YAxis: chart.YAxis{
+			Range: &chart.ContinuousRange{
+				Min: 0.0,
+				Max: max,
+			},
+		},
 		Background: chart.Style{
 			Padding: chart.Box{
 				Top: 40,
