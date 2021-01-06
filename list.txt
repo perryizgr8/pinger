@@ -1,5 +1,5 @@
 bing.com
 google.com
-google.co.in
+example.com
 facebook.com
 amazon.in

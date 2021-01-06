@@ -18,6 +18,16 @@ import (
 	"github.com/wcharczuk/go-chart/v2"
 )
 
+type siteData struct {
+	Sitelist         string
+	OutputFileSuffix string
+}
+
+type page struct {
+	Title string
+	Body  []byte
+}
+
 func pingit(list string) []ping.Statistics {
 	var statsList []ping.Statistics
 	var waitGroup sync.WaitGroup
@@ -39,9 +49,6 @@ func pingit(list string) []ping.Statistics {
 			}
 			stats := pinger.Statistics()
 			statsList = append(statsList, *stats)
-			fmt.Println(stats.Addr)
-			fmt.Printf("tx=%d, rx=%d\n", stats.PacketsSent, stats.PacketsRecv)
-			fmt.Printf("min=%d, max=%d, avg=%d\n", stats.MinRtt, stats.MaxRtt, stats.AvgRtt)
 			waitGroup.Done()
 		}()
 	}
@@ -49,28 +56,18 @@ func pingit(list string) []ping.Statistics {
 	return statsList
 }
 
-type Page struct {
-	Title string
-	Body  []byte
-}
-
-func (p *Page) save() error {
+func (p *page) save() error {
 	filename := p.Title + ".txt"
 	return ioutil.WriteFile(filename, p.Body, 0600)
 }
 
-func loadPage(title string) (*Page, error) {
+func loadPage(title string) (*page, error) {
 	filename := title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	return &Page{Title: title, Body: body}, nil
-}
-
-type SiteData struct {
-	Sitelist         string
-	OutputFileSuffix string
+	return &page{Title: title, Body: body}, nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +75,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("method=%s\n", r.Method)
 	if r.Method == "POST" {
 		r.ParseForm()
-		fmt.Printf("parsed")
 		os.Remove("list.txt")
 		file, _ := os.Create("list.txt")
 		file.Write([]byte(r.FormValue("list")))
@@ -90,7 +86,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	file, _ := os.Open("list.txt")
 	data := make([]byte, 100)
 	count, _ := file.Read(data)
-	p := &SiteData{Sitelist: string(data[:count]), OutputFileSuffix: strconv.FormatInt(chartSuffix.Unix(), 10)}
+	p := &siteData{Sitelist: string(data[:count]), OutputFileSuffix: strconv.FormatInt(chartSuffix.Unix(), 10)}
 	t, _ := template.ParseFiles("mainpage.html")
 	t.Execute(w, p)
 	file.Close()
