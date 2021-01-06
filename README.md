@@ -7,6 +7,12 @@ You can use the `go get` command to fetch this repository into your Go workspace
 `go get github.com/perryizgr8/pinger`
 
 ## Run the server
+On the pi (or any Linux machine) you need to run this command to let our program send ICMP pings.
+
+`sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"`
+
+Read more about this on the `go-ping` GitHub [page](https://github.com/go-ping/ping#linux).
+
 Start the server using `go run .`. This should fetch all dependencies and start listening on port 8080.
 
 ## Open the page
