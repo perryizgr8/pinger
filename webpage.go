@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,6 +81,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		file.Write([]byte(r.FormValue("list")))
 		file.Close()
 		chartSuffix = drawChart(pingit(r.FormValue("list")))
+		deleteOldCharts(chartSuffix)
 	} else {
 		chartSuffix = time.Unix(0, 0)
 	}
@@ -90,6 +92,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("mainpage.html")
 	t.Execute(w, p)
 	file.Close()
+}
+
+func deleteOldCharts(newChart time.Time) {
+	var oldCharts []string
+	dir := "assets"
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		oldCharts = append(oldCharts, path)
+		return nil
+	})
+	fmt.Println("list:")
+	for _, oldChart := range oldCharts {
+		if (oldChart != "assets") && (oldChart != fmt.Sprintf("assets/output%d.png", newChart.Unix())) && (oldChart != "assets/output0.png") {
+			fmt.Println("deleting " + oldChart)
+			os.Remove(oldChart)
+		}
+	}
 }
 
 func main() {
